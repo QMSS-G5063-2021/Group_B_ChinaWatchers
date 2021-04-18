@@ -1,0 +1,128 @@
+---
+title: "US-China Competition: Investments"
+output: 
+  flexdashboard::flex_dashboard:
+    vertical_layout: scroll
+    theme: bootstrap
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(dplyr)
+library(tibble)
+library(ggplot2)
+library(readr)
+library(plotly)
+library(DT)
+
+outflows_filepath <- file.path(getwd(), "data", "Outflows.csv")
+df <- read_csv(outflows_filepath)
+```
+
+Overview
+===================================== 
+### Age of Competition?
+Tensions between China and the United States continue to make headlines on a frequent basis, and we can continue to expect this mounting tension to continue. On the economic front, the ongoing [US-China Trade War](https://thediplomat.com/2021/03/the-us-china-trade-war-is-still-happening/) is an oft cited consequence of this tension. Through this dashboard, we hope to shed light into another economic frontier of the competition between the US and China -- their foreign investments to other countries, around the world. 
+
+China's continued growth, and success in establishing itself as a global superpower is contingent on the volume of its foreign direct investment. Beyond being one way that China might continue to gain influence, foreign investments are one key way for China to [garner more strategies resources, which will increase its economic competitiveness](https://thediplomat.com/2020/01/the-investment-war-with-china-assessing-american-pressure/).
+
+Claims on the volume of foreign investments, both by China and the United States, are best mapped out with data. In this dashboard, we map out the contours of the US-China competition in investments. We do this at the level of the entire world, and also at the level of a single continent, Africa, where both US and Chinese Investments have been [on the rise over the years](https://www.forbes.com/sites/earlcarr/2020/09/04/the-us-versus-chinese-investment-in-africa/?sh=2efe223965d4); it is one key part of the world where experts expect [US-China competition to intensify](https://www.cnbc.com/2019/10/09/the-us-china-trade-rivalry-is-underway-in-africa.html).
+
+### Image Source: [Henry Wong for the South China Morning Post](https://www.scmp.com/news/china/article/3119534/us-china-relationship-arguably-most-important-one-washington-world-says)
+```{r, echo=FALSE, out.width="50%"}
+image_filepath <- file.path(getwd(), "image", "Front_Page_Image.jpg")
+
+knitr::include_graphics(image_filepath)
+```
+
+
+
+World Map
+===================================== 
+### Commentary
+Lorem Ipsum
+
+### Big Map - Frame 1 
+
+```{r}
+
+```
+
+
+Rising Outflows
+===================================== 
+### FDI Outflows as a percentage of GDP 
+This segment displays line graphs of how the US and China both seen rising FDI outflows over the years. Notably, however, one can note how China's rise in FDI outflows have mostly been linear, while the US' seem to fluctuate over time, possibly due to the policies of different Presidential administrations. 
+
+### Rising FDI Outflows
+
+```{r}
+transposed <- as.data.frame(t(as.matrix(df))) #Transpose
+ 
+#get the variables we want#
+colnames(transposed) <- transposed[1,]
+transposed$year <- rownames(transposed)
+
+transposed <- transposed %>% #moving year to the first
+  select(year, everything())
+
+tranposed_new <- transposed[!(rownames(transposed) %in% c('Country Name', 'Country Code')), ]
+
+tranposed_new$`China` <- as.numeric(tranposed_new$`China`)
+
+tranposed_new$`United States` <- as.numeric(tranposed_new$`United States`)
+
+tranposed_new$`year` <- as.numeric(tranposed_new$`year`)
+
+#write.csv(tranposed_new, 'countriesfdi_new.csv')
+
+colors <- c("China" = "red", "United States" = "blue")
+
+china_us_fdi <- ggplot(tranposed_new) + 
+  geom_point(aes(x = `year`, y = `China`, color = "China")) +
+  geom_smooth(aes(x = `year`, y = `China`, color = "China"), method='lm', se = F) +
+  geom_point(aes(x = `year`, y = `United States`, color = "United States")) + 
+  stat_smooth(aes(x = `year`, y = `United States`, color = "United States"), method='loess', se = F) + 
+  ggthemes::theme_tufte() + 
+  labs(
+    x = 'Year',
+    y = 'FDI Net Outflows (%GDP)',
+    title = 'US vs China FDI Outflows (as %GDP)', 
+    color = "Legend"
+  ) + 
+  scale_color_manual(values = colors)
+
+ggplotly(china_us_fdi, tooltip =c("x", "y"))
+```
+
+### Rising FDI Outflows (Data)
+
+```{r}
+myvars <- colnames(tranposed_new) %in% c("United States", "China") 
+newdata <- tranposed_new[myvars]
+
+
+datatable(newdata)
+```
+
+Next Frontier: Africa
+===================================== 
+### Commentary
+Lorem Ipsum
+
+### Frame 3 
+
+```{r}
+```
+
+Data Sources
+===================================== 
+
+### World Map
+Lorem Ipsum
+
+### Rising Tensions
+Lorem Ipsum
+
+### Africa
+Lorem Ipsum
