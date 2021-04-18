@@ -3,7 +3,7 @@ title: "US-China Competition: Investments"
 output: 
   flexdashboard::flex_dashboard:
     vertical_layout: scroll
-    theme: bootstrap
+    theme: cosmo
 ---
 
 ```{r setup, include=FALSE}
