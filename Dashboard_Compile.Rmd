@@ -14,9 +14,13 @@ library(ggplot2)
 library(readr)
 library(plotly)
 library(DT)
+library(RColorBrewer)
 
 outflows_filepath <- file.path(getwd(), "data", "Outflows.csv")
 df <- read_csv(outflows_filepath)
+
+chinainv_clean_fp <- file.path(getwd(), "data", "chinainv_clean.csv")
+chinainv_clean <- read.csv(chinainv_clean_fp)
 ```
 
 Overview
@@ -46,6 +50,110 @@ Lorem Ipsum
 
 ```{r}
 
+```
+
+
+Yearly Investments by Categories
+=====================================
+### Overview
+The following page displays the yearly amount of Chinese investments overseas from 2005 to 2020. The amounts are sorted by three categories: 1. the ten largest investment destinations, 2. the ten largest Chinese investors and 3. industry sectors. Chinese investments overseas generally reached a peak in the mid-late 2010s, which preceded a slowdown in the following years. The United States is the top investment destination for Chinese investors and the energy sector is consistently the top sector for Chinese investment. There is no one Chinese investor that has dominated Chinese investment overseas.
+
+
+### Top 10 Investment Destinations
+
+```{r}
+CountryYearly <- chinainv_clean %>% 
+  group_by(Year, Country) %>% 
+  summarise(TotalInvestment = sum(Quantity, na.rm = T),
+            .groups = "keep")
+
+byCountry <- CountryYearly %>% 
+  group_by(Country) %>% 
+  summarise(TotalInvestment = sum(TotalInvestment, na.rm = T)) %>% 
+  arrange(desc(TotalInvestment))
+
+top10countries <- byCountry %>% 
+  head(10) %>% 
+  select(Country) %>% 
+  pull()
+
+Top10CountryYearly <- CountryYearly %>% 
+  filter(Country %in% top10countries)
+
+countryViz <- Top10CountryYearly %>% 
+  ggplot(aes(x = Year, y = TotalInvestment)) +
+  geom_line(aes(color = Country)) +
+  labs(title = "Chinese Foreign Investments by Top 10 Destinations (2005-2020)",
+       y = "Total Investments (in millions USD)") +
+  scale_color_brewer(palette = "Paired") +
+  ggthemes::theme_tufte() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplotly(countryViz)
+```
+
+### Top 10 Chinese Investors
+
+```{r}
+InvestorYearly <- chinainv_clean %>% 
+  group_by(Year, Investor) %>% 
+  summarise(TotalInvestment = sum(Quantity, na.rm = T),
+            .groups = "keep") 
+
+byInvestor <- chinainv_clean %>% 
+  group_by(Investor) %>% 
+  summarise(TotalInvestment = sum(Quantity, na.rm=T)) %>% 
+  arrange(desc(TotalInvestment))
+
+top10Investors <- byInvestor %>% 
+  head(10) %>% 
+  select(Investor) %>% 
+  pull()
+
+Top10InvestorYearly <- InvestorYearly %>% 
+  filter(Investor %in% top10Investors)
+
+investorViz <- Top10InvestorYearly %>% 
+  ggplot(aes(x = Year, y = TotalInvestment)) +
+  geom_line(aes(color = Investor)) +
+  labs(title = "Chinese Foreign Investments by Largest 10 Investors (2005-2020)",
+       y = "Total Investments (in millions USD)") +
+  ylim(0,20000)+
+  ggthemes::theme_tufte() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplotly(investorViz)
+```
+
+### Chinese Investments by Sector
+
+```{r}
+SectorYearly <- chinainv_clean %>% 
+  group_by(Year, Sector) %>% 
+  summarise(TotalInvestment = sum(Quantity, na.rm = T),
+            .groups = "keep") 
+
+bySector <- SectorYearly %>% 
+  group_by(Sector) %>% 
+  summarise(TotalInvestment = sum(TotalInvestment, na.rm = T)) %>% 
+  arrange(desc(TotalInvestment))
+
+nb.cols <- 14
+mycolors <- colorRampPalette(brewer.pal(9, "Set1"))(nb.cols)
+
+sectorViz <- SectorYearly %>% 
+  ggplot(aes(x = Year, y = TotalInvestment)) +
+  labs(title = "Chinese Foreign Investments by Sector (2005-2020)",
+       y = "Total Investments (in millions USD)") +
+  geom_line(aes(color = Sector)) +
+  scale_color_manual(values = mycolors) +
+  ggthemes::theme_tufte() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+  
+ggplotly(sectorViz)
 ```
 
 
