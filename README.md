@@ -19,4 +19,4 @@ Link to Demo: https://www.youtube.com/watch?v=24zIiwSdqxs
 
 - This is a broad overview of the main features of our dashboard, that we hope will orient you to its main components.  
 
-Link to RPubs: 
+Link to RPubs: https://rpubs.com/kagen/datavizchinafdi
