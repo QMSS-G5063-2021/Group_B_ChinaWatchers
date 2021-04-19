@@ -1,5 +1,5 @@
 ---
-title: "China's Outward Foreign Direct Investment (FDI)"
+title: "China's Foreign Direct Investment (FDI)"
 output: 
   flexdashboard::flex_dashboard:
     vertical_layout: scroll
