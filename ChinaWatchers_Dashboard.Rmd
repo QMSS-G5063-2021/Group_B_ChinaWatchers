@@ -483,7 +483,7 @@ china_stock_long$iso = countrycode(china_stock_long$country, origin="country.nam
 
 ```
 
-
+ 
 ```{r}
 stock_plot = ggplot(filter(totals, fdi_type=="stock", year >=2003), aes(x=year, y=investment_amount, fill=country)) +
   geom_bar(aes(fill=country), stat="identity") +
@@ -495,6 +495,9 @@ stock_plot = ggplot(filter(totals, fdi_type=="stock", year >=2003), aes(x=year, 
 
 ggplotly(stock_plot)
 ```
+
+
+### Same when looking at flow instead of stock
 
 ```{r}
 flow_plot = ggplot(filter(totals, fdi_type=="flow", year >= 2003), aes(x=year, y=investment_amount, fill=country)) +
@@ -508,6 +511,8 @@ flow_plot = ggplot(filter(totals, fdi_type=="flow", year >= 2003), aes(x=year, y
 ggplotly(flow_plot)
 ```
 
+### Investment by African country
+
 ```{r}
 top_10_stock = china_stock_long %>% group_by(country) %>% summarize(max=max(stock_investment)) %>% arrange(desc(max)) %>% head(10) %>% select(country) %>% unlist()
 by_country_stock = china_stock_long %>% filter(country %in% top_10_stock) %>%
@@ -520,6 +525,25 @@ by_country_stock = china_stock_long %>% filter(country %in% top_10_stock) %>%
 by_country_stock
 ```
 
+### Zooming in on latest data: 2019 Heatmap
+
+```{r}
+china_stock_wide = china_stock_long %>% pivot_wider(id_cols=c(country, iso), names_from=year, values_from="stock_investment")
+
+africa_geo = geojson_read("./data/africa.geo.json", what="sp")
+africa_geo@data = africa_geo@data %>% left_join(china_stock_wide, by=c("gu_a3"="iso"))
+
+
+m = tm_shape(africa_geo) +
+  tm_borders() +
+  tm_text("country", size = .5) +
+  tm_fill("2019", title="Millions USD", convert2density = FALSE) +
+  tm_layout(
+    main.title="2019 China FDI Heatmap: Stock",
+    frame=FALSE
+  )
+m
+```
 Data Sources and Repo Link
 ===================================== 
 
