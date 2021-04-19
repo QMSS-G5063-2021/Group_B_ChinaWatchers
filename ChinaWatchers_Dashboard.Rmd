@@ -458,8 +458,6 @@ china_africa_stock = china_africa_stock %>% select(where(function(x) !all(is.na(
 china_africa_flow = readxl::read_xlsx("./data/FDIData_08Jan2021.xlsx", skip=1, n_max=30, sheet=2)
 china_africa_flow = china_africa_flow %>% select(where(function(x) !all(is.na(x)))) %>% rename("year"="US$ mn, unadjusted")
 
-china_africa_sector = readxl::read_xlsx("./data/FDIData_08Jan2021.xlsx", skip=1, n_max=31, sheet=3)
-china_africa_sector %>% select(where(function(x) x[1]!="%"))
 china_africa = cbind(china_africa_stock["year"], china_africa_stock["Total, US$ bn"], china_africa_flow["Total, US$ bn"])
 names(china_africa) = c("year", "stock", "flow")
 
@@ -474,6 +472,15 @@ us_africa_long = pivot_longer(us_africa, 2:3, names_to="fdi_type", values_to="in
 us_africa_long$country="US"
 
 totals = rbind(china_africa_long, us_africa_long)
+
+
+china_flow_long = china_africa_flow %>% pivot_longer(2:54, names_to="country", values_to="flow_investment") %>%
+  filter(!is.na(flow_investment), country!="Regional", country !="Total, US$ mn") %>% select(year, country, flow_investment)
+
+china_stock_long = china_africa_stock %>% pivot_longer(2:54, names_to="country", values_to="stock_investment") %>%
+  filter(!is.na(stock_investment), country!="Regional") %>% select(year, country, stock_investment)
+china_stock_long$iso = countrycode(china_stock_long$country, origin="country.name", destination="iso3c")
+
 ```
 
 
