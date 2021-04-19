@@ -2,7 +2,7 @@
 Project by Garda Ramadhito, Daryl Kow, Marc Castillo, Kagen Lim
 
 ## Project Title
-China's Foreign Direct Investment
+China's Foreign Direct Investment (FDI)
 
 ## Project Objective
 Through a dashboard, we visualize China’s growth in outward-oriented foreign investments. We do this at the level of the entire world, and also at the level of a single continent, Africa, where Chinese Investments have been on the rise over the years; it is one key part of the world where experts expect US-China competition to intensify.
