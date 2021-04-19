@@ -15,6 +15,13 @@ library(readr)
 library(plotly)
 library(DT)
 library(RColorBrewer)
+if(!require(geojsonio)) install.packages("geojsonio", repos = "http://cran.us.r-project.org")
+if(!require(leaflet)) install.packages("leaflet", repos = "http://cran.us.r-project.org")
+if(!require(RColorBrewer)) install.packages("RColorBrewer", repos = "http://cran.us.r-project.org")
+
+library(geojsonio)
+library(leaflet)
+library(RColorBrewer)
 
 outflows_filepath <- file.path(getwd(), "data", "Outflows.csv")
 df <- read_csv(outflows_filepath)
@@ -37,19 +44,14 @@ In this dashboard, we visualize  **China's growth in outward-oriented foreign in
 We hope that by doing so, we are able to map out the contours of Chinese investment activity, which will be useful for observers of China and of US-China relations. 
 
 Please explore each tabs to find out more: 
-- World Map - Where is China investing in? 
-- Yearly Investments by Categories - What is China investing in? 
-- Outgoing FDI - Is China really investing more than the US? 
-- Next Frontier: Africa - What do we know about how China is investing in Africa?
 
-### Image Source: [Henry Wong for the South China Morning Post](https://www.scmp.com/news/china/article/3119534/us-china-relationship-arguably-most-important-one-washington-world-says)
-```{r, echo=FALSE, out.width="50%"}
-image_filepath <- file.path(getwd(), "image", "Front_Page_Image.jpg")
+1. World Map - Where is China investing in? 
 
-knitr::include_graphics(image_filepath)
-```
+2. Yearly Investments by Categories - What is China investing in? 
 
+3. Outgoing FDI - Is China really investing more than the US? 
 
+4. Next Frontier: Africa - What do we know about how China is investing in Africa?
 
 World Map
 ===================================== 
@@ -57,12 +59,222 @@ World Map
 
 Where is China investing in? 
 
-### Big Map - Frame 1 
+This segment displays a world map of the location of China's investments over the years, overall, and by industry, from 2005 to 2020. 
 
+As this is quite an information-rich visualization, a Data Table is appended below for further exploration.
+
+
+
+### China's Investment Around the World
+
+```{r Preparing dataset, include=FALSE}
+# Preparing dataset
+map_filepath <- file.path(getwd(), "data", "china_investments.csv")
+df_china_invest = read.csv(map_filepath)
+df_china_invest$Quantity.in.Millions = as.numeric(gsub("\\$", "", df_china_invest$Quantity.in.Millions))
+df_china_invest_grouped = df_china_invest %>%
+  group_by(Country, Sector) %>%
+  summarise(Investment_Count=n(),
+            amount=sum(Quantity.in.Millions)) %>% 
+  filter(!is.na(amount)) %>% 
+  mutate(Country = gsub("Russian Federation", "Russia", Country))
+
+df_china_invest_grouped_all = df_china_invest_grouped %>% 
+  group_by(Country) %>% 
+  summarise(amount=sum(amount))
+
+df_china_invest_grouped_agri = df_china_invest_grouped %>% 
+  filter(Sector=='Agriculture') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_energy = df_china_invest_grouped %>% 
+  filter(Sector=='Energy') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_trans = df_china_invest_grouped %>% 
+  filter(Sector=='Transport') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_chem = df_china_invest_grouped %>% 
+  filter(Sector=='Chemicals') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_metals = df_china_invest_grouped %>% 
+  filter(Sector=='Metals') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_util = df_china_invest_grouped %>% 
+  filter(Sector=='Utilities') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_real = df_china_invest_grouped %>% 
+  filter(Sector=='Real estate') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_fin = df_china_invest_grouped %>% 
+  filter(Sector=='Finance') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_tech = df_china_invest_grouped %>% 
+  filter(Sector=='Technology') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_other = df_china_invest_grouped %>% 
+  filter(Sector=='Other') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_ent = df_china_invest_grouped %>% 
+  filter(Sector=='Entertainment') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_logs = df_china_invest_grouped %>% 
+  filter(Sector=='Logistics') %>% 
+  group_by(Country)
+df_china_invest_grouped_fin = df_china_invest_grouped %>% 
+  filter(Sector=='Finance') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_tour = df_china_invest_grouped %>% 
+  filter(Sector=='Tourism') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_health = df_china_invest_grouped %>% 
+  filter(Sector=='Health') %>% 
+  group_by(Country)
+
+map_filepath2 <- file.path(getwd(), "data", "countries.geo.json")
+worldcountry = geojson_read(map_filepath2, what = "sp")
+```
+```{r Building basemap, include=FALSE}
+basemap = leaflet(worldcountry, options = leafletOptions(minZoom = 1.25, 
+                                                      worldCopyJump=FALSE,
+                                                      maxBounds = list(
+                                                        list(-90, -180),
+                                                        list(90, 180)))) %>% 
+  addTiles() %>% 
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addLayersControl(
+    position='bottomleft',
+    baseGroups=c("All", "Agriculture", "Energy", "Transport", "Chemicals", "Metals", "Utilities", "Real estate", "Finance", "Technology", "Other", "Entertainment", "Logistics", "Tourism", "Health"),
+    options = layersControlOptions(collapsed = FALSE)) %>% 
+  clearBounds()
+```
 ```{r}
+# create plotting parameters for map
+bins_indiv = c(100, 250, 500, 750, 1000, 1500, 2000, 3000, 5000) 
+rb_indiv <- brewer.pal(9, "Reds")
+cv_pal_indiv <- colorBin(rb_indiv, bins = bins_indiv)
 
+bins_all = c(100, 500, 1000, 1500, 2500, 4500, 7500, 10000, 25000) 
+rb_all <- brewer.pal(9, "Reds")
+cv_pal_all <- colorBin(rb_all, bins = bins_all)
+
+# mapping
+map = basemap %>%
+  #addLegend("bottomright", pal = cv_pal_all, values = df_china_invest_grouped_all$amount, title = "<small>Investment Value (in millions)</small>", group = 'All') %>%
+  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_agri$amount, title = "<small>Investment Value (in millions)</small>", group = 'Agriculture') %>% 
+  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_chem$amount, title = "<small>Investment Value (in millions)</small>", group = 'Chemicals') %>% 
+  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_energy$amount, title = "<small>Investment Value (in millions)</small>", group = 'Energy') %>% 
+  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_ent$amount, title = "<small>Investment Value (in millions)</small>", group = 'Entertainment') %>% 
+  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_fin$amount, title = "<small>Investment Value (in millions)</small>", group = 'Finance') %>% 
+  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_health$amount, title = "<small>Investment Value (in millions)</small>", group = 'Health') %>% 
+  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_logs$amount, title = "<small>Investment Value (in millions)</small>", group = 'Logistics') %>% 
+  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_metals$amount, title = "<small>Investment Value (in millions)</small>", group = 'Metals') %>% 
+  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_other$amount, title = "<small>Investment Value (in millions)</small>", group = 'Other') %>% 
+  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_real$amount, title = "<small>Investment Value (in millions)</small>", group = 'Real estate') %>% 
+  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_tech$amount, title = "<small>Investment Value (in millions)</small>", group = 'Technology') %>% 
+  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_tour$amount, title = "<small>Investment Value (in millions)</small>", group = 'Tourism') %>% 
+  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_trans$amount, title = "<small>Investment Value (in millions)</small>", group = 'Transport') %>% 
+  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_util$amount, title = "<small>Investment Value (in millions)</small>", group = 'Utilities') %>% 
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_all(df_china_invest_grouped_all$amount),
+              group='All') %>%  
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_agri$amount),
+              group='Agriculture') %>% 
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_chem$amount),
+              group='Chemicals') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_energy$amount),
+              group='Energy') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_ent$amount),
+              group='Entertainment') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_fin$amount),
+              group='Finance') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_health$amount),
+              group='Health') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_logs$amount),
+              group='Logistics') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_metals$amount),
+              group='Metals') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_other$amount),
+              group='Other') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_real$amount),
+              group='Real estate') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_tech$amount),
+              group='Technology') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_tour$amount),
+              group='Tourism') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_trans$amount),
+              group='Transport') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_util$amount),
+              group='Utilities')
+
+map
 ```
 
+### China's Investment Around the World (Data)
+
+```{r}
+pretty_headers <- 
+  gsub("[_]", " ", colnames(df_china_invest_grouped)) %>%
+  stringr::str_to_title()
+
+datatable(df_china_invest_grouped,
+          colnames = pretty_headers)
+```
 
 Yearly Investments by Categories
 =====================================
@@ -222,15 +434,6 @@ china_us_fdi <- ggplot(tranposed_new) +
 ggplotly(china_us_fdi, tooltip =c("x", "y"))
 ```
 
-### China's Rising FDI Outflows (Data)
-
-```{r}
-myvars <- colnames(tranposed_new) %in% c("United States", "China") 
-newdata <- tranposed_new[myvars]
-
-
-datatable(newdata)
-```
 
 Next Frontier: Africa
 ===================================== 
@@ -246,14 +449,14 @@ What do we know about how China is investing in Africa?
 Data Sources
 ===================================== 
 
+The data used is this projects was taken from the following sources:
 
-### World Map
+### World Map and Yearly Investments by Categories
 https://www.aei.org/china-global-investment-tracker/ 
 
 ### Rising Tensions
 https://data.worldbank.org/indicator/BM.KLT.DINV.CD.WD?end=2019&start=1970&view=chart
 
-### Africa
-http://www.sais-cari.org/chinese-investment-in-af
-Rica
+### Next Frontier: Africa
+http://www.sais-cari.org/chinese-investment-in-africa
 
