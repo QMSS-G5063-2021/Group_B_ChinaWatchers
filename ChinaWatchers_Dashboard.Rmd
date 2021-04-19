@@ -444,12 +444,13 @@ What do we know about how China is investing in Africa?
 ### Frame 3 
 
 ```{r}
+
 ```
 
-Data Sources
+Data Sources and Repo Link
 ===================================== 
 
-The data used is this projects was taken from the following sources:
+This is the link to the group's repository: https://github.com/QMSS-G5063-2021/Group_B_ChinaWatchers. The data used in this project was taken from the following sources:
 
 ### World Map and Yearly Investments by Categories
 https://www.aei.org/china-global-investment-tracker/ 
