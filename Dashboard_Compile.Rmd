@@ -1,5 +1,5 @@
 ---
-title: "US-China Competition: Investments"
+title: "China's Outward Foreign Direct Investment (FDI)"
 output: 
   flexdashboard::flex_dashboard:
     vertical_layout: scroll
@@ -26,11 +26,21 @@ chinainv_clean <- read.csv(chinainv_clean_fp)
 Overview
 ===================================== 
 ### Age of Competition?
-Tensions between China and the United States continue to make headlines on a frequent basis, and we can continue to expect this mounting tension to continue. On the economic front, the ongoing [US-China Trade War](https://thediplomat.com/2021/03/the-us-china-trade-war-is-still-happening/) is an oft cited consequence of this tension. Through this dashboard, we hope to shed light into another economic frontier of the competition between the US and China -- their foreign investments to other countries, around the world. 
+Tensions between China and the United States continue to make headlines on a frequent basis, and we can continue to expect this mounting tension to continue. On the economic front, the ongoing [US-China Trade War](https://thediplomat.com/2021/03/the-us-china-trade-war-is-still-happening/) is an oft cited consequence of this tension. Through this dashboard, we hope to shed light into another economic frontier of China's continued growth -- their foreign investments to other countries, around the world. 
 
-China's continued growth, and success in establishing itself as a global superpower is contingent on the volume of its foreign direct investment. Beyond being one way that China might continue to gain influence, foreign investments are one key way for China to [garner more strategic resources, which will increase its economic competitiveness](https://thediplomat.com/2020/01/the-investment-war-with-china-assessing-american-pressure/).
+China's success in establishing itself as a global superpower is contingent on the volume of its foreign direct investment. Beyond being one way that China might continue to gain influence, foreign investments are one key way for China to [garner more strategic resources, which will increase its economic competitiveness](https://thediplomat.com/2020/01/the-investment-war-with-china-assessing-american-pressure/). This causes tension with the United States.
 
-Claims on the volume of foreign investments, both by China and the United States, are best mapped out with data. In this dashboard, we map out the contours of the US-China competition in investments. We do this at the level of the entire world, and also at the level of a single continent, Africa, where both US and Chinese Investments have been [on the rise over the years](https://www.forbes.com/sites/earlcarr/2020/09/04/the-us-versus-chinese-investment-in-africa/?sh=2efe223965d4); it is one key part of the world where experts expect [US-China competition to intensify](https://www.cnbc.com/2019/10/09/the-us-china-trade-rivalry-is-underway-in-africa.html).
+Claims on the volume of foreign investments by China, are best mapped out with data.
+
+In this dashboard, we visualize  **China's growth in outward-oriented foreign investments**. We do this at the level of the entire world, and also at the level of a single continent, Africa, where Chinese Investments have been [on the rise over the years](https://www.forbes.com/sites/earlcarr/2020/09/04/the-us-versus-chinese-investment-in-africa/?sh=2efe223965d4); it is one key part of the world where experts expect [US-China competition to intensify](https://www.cnbc.com/2019/10/09/the-us-china-trade-rivalry-is-underway-in-africa.html).
+
+We hope that by doing so, we are able to map out the contours of Chinese investment activity, which will be useful for observers of China and of US-China relations. 
+
+Please explore each tabs to find out more: 
+- World Map - Where is China investing in? 
+- Yearly Investments by Categories - What is China investing in? 
+- Outgoing FDI - Is China really investing more than the US? 
+- Next Frontier: Africa - What do we know about how China is investing in Africa?
 
 ### Image Source: [Henry Wong for the South China Morning Post](https://www.scmp.com/news/china/article/3119534/us-china-relationship-arguably-most-important-one-washington-world-says)
 ```{r, echo=FALSE, out.width="50%"}
@@ -44,7 +54,8 @@ knitr::include_graphics(image_filepath)
 World Map
 ===================================== 
 ### Commentary
-Lorem Ipsum
+
+Where is China investing in? 
 
 ### Big Map - Frame 1 
 
@@ -56,6 +67,9 @@ Lorem Ipsum
 Yearly Investments by Categories
 =====================================
 ### Overview
+
+What is China investing in? 
+
 The following page displays the yearly amount of Chinese investments overseas from 2005 to 2020. The amounts are sorted by three categories: 1. the ten largest investment destinations, 2. the ten largest Chinese investors and 3. industry sectors. Chinese investments overseas generally reached a peak in the mid-late 2010s, which preceded a slowdown in the following years. The United States is the top investment destination for Chinese investors and the energy sector is consistently the top sector for Chinese investment. There is no one Chinese investor that has dominated Chinese investment overseas.
 
 
@@ -160,9 +174,14 @@ ggplotly(sectorViz)
 Rising Outflows
 ===================================== 
 ### FDI Outflows as a percentage of GDP 
-This segment displays line graphs of how the US and China both seen rising FDI outflows over the years. Notably, however, one can note how China's rise in FDI outflows have mostly been linear, while the US' seem to fluctuate over time, possibly due to the policies of different Presidential administrations. 
 
-### Rising FDI Outflows
+Is China really investing more than the US? 
+
+This segment displays line graphs of US and China both seen FDI outflows over the years. Notably, however, one can note how China's rise in FDI outflows have mostly been linear, while the US' seem to fluctuate over time.
+
+Additionally, we can clearly see that China's volume foreign direct investments, as a percentage of their GDP, has recently overtaken that of the United States'. 
+
+### China's Rising FDI Outflows
 
 ```{r}
 transposed <- as.data.frame(t(as.matrix(df))) #Transpose
@@ -188,7 +207,7 @@ colors <- c("China" = "red", "United States" = "blue")
 
 china_us_fdi <- ggplot(tranposed_new) + 
   geom_point(aes(x = `year`, y = `China`, color = "China")) +
-  geom_smooth(aes(x = `year`, y = `China`, color = "China"), method='lm', se = F) +
+  geom_smooth(aes(x = `year`, y = `China`, color = "China"), method='loess', se = F) +
   geom_point(aes(x = `year`, y = `United States`, color = "United States")) + 
   stat_smooth(aes(x = `year`, y = `United States`, color = "United States"), method='loess', se = F) + 
   ggthemes::theme_tufte() + 
@@ -203,7 +222,7 @@ china_us_fdi <- ggplot(tranposed_new) +
 ggplotly(china_us_fdi, tooltip =c("x", "y"))
 ```
 
-### Rising FDI Outflows (Data)
+### China's Rising FDI Outflows (Data)
 
 ```{r}
 myvars <- colnames(tranposed_new) %in% c("United States", "China") 
@@ -216,7 +235,8 @@ datatable(newdata)
 Next Frontier: Africa
 ===================================== 
 ### Commentary
-Lorem Ipsum
+
+What do we know about how China is investing in Africa?
 
 ### Frame 3 
 
@@ -226,11 +246,14 @@ Lorem Ipsum
 Data Sources
 ===================================== 
 
+
 ### World Map
-Lorem Ipsum
+https://www.aei.org/china-global-investment-tracker/ 
 
 ### Rising Tensions
-Lorem Ipsum
+https://data.worldbank.org/indicator/BM.KLT.DINV.CD.WD?end=2019&start=1970&view=chart
 
 ### Africa
-Lorem Ipsum
+http://www.sais-cari.org/chinese-investment-in-af
+Rica
+
