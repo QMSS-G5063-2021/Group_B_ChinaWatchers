@@ -440,7 +440,6 @@ Next Frontier: Africa
 ### Commentary
 
 What do we know about how China is investing in Africa?
-### Global pattern holds in Africa as well
 
 ```{r}
 # libraries
@@ -483,7 +482,7 @@ china_stock_long$iso = countrycode(china_stock_long$country, origin="country.nam
 
 ```
 
- 
+### Global pattern holds in Africa as well
 ```{r}
 stock_plot = ggplot(filter(totals, fdi_type=="stock", year >=2003), aes(x=year, y=investment_amount, fill=country)) +
   geom_bar(aes(fill=country), stat="identity") +
@@ -544,6 +543,7 @@ m = tm_shape(africa_geo) +
   )
 m
 ```
+
 Data Sources and Repo Link
 ===================================== 
 
