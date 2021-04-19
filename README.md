@@ -10,8 +10,8 @@ Through a dashboard, we visualize China’s growth in outward-oriented foreign i
 ## Key Components
 1. World Map - Where is China investing in?
 2. Yearly Investments by Categories - What is China investing in?
-3, Outgoing FDI - Is China really investing more than the US?
-4.Next Frontier: Africa - What do we know about how China is investing in Africa?
+3. Outgoing FDI - Is China really investing more than the US?
+4. Next Frontier: Africa - What do we know about how China is investing in Africa?
 
 ## Links
 
