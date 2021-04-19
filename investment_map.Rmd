@@ -1,0 +1,211 @@
+---
+title: "China Watchers"
+output: html_notebook
+---
+
+```{r echo=FALSE, results = FALSE, include=FALSE}
+if(!require(dplyr)) install.packages("dplyr", repos = "http://cran.us.r-project.org")
+if(!require(geojsonio)) install.packages("geojsonio", repos = "http://cran.us.r-project.org")
+if(!require(leaflet)) install.packages("leaflet", repos = "http://cran.us.r-project.org")
+if(!require(RColorBrewer)) install.packages("RColorBrewer", repos = "http://cran.us.r-project.org")
+
+library(dplyr)
+library(geojsonio)
+library(leaflet)
+library(RColorBrewer)
+```
+```{r Preparing dataset, include=FALSE}
+# Preparing dataset
+df_china_invest = read.csv('./input_data/china_investments.csv')
+df_china_invest$Quantity.in.Millions = as.numeric(gsub("\\$", "", df_china_invest$Quantity.in.Millions))
+df_china_invest_grouped = df_china_invest %>%
+  group_by(Country, Sector) %>%
+  summarise(Investment_Count=n(),
+            amount=sum(Quantity.in.Millions)) %>% 
+  filter(!is.na(amount)) %>% 
+  mutate(Country = gsub("Russian Federation", "Russia", Country))
+
+df_china_invest_grouped_all = df_china_invest_grouped %>% 
+  group_by(Country) %>% 
+  summarise(amount=sum(amount))
+
+df_china_invest_grouped_agri = df_china_invest_grouped %>% 
+  filter(Sector=='Agriculture') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_energy = df_china_invest_grouped %>% 
+  filter(Sector=='Energy') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_trans = df_china_invest_grouped %>% 
+  filter(Sector=='Transport') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_chem = df_china_invest_grouped %>% 
+  filter(Sector=='Chemicals') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_metals = df_china_invest_grouped %>% 
+  filter(Sector=='Metals') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_util = df_china_invest_grouped %>% 
+  filter(Sector=='Utilities') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_real = df_china_invest_grouped %>% 
+  filter(Sector=='Real estate') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_fin = df_china_invest_grouped %>% 
+  filter(Sector=='Finance') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_tech = df_china_invest_grouped %>% 
+  filter(Sector=='Technology') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_other = df_china_invest_grouped %>% 
+  filter(Sector=='Other') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_ent = df_china_invest_grouped %>% 
+  filter(Sector=='Entertainment') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_logs = df_china_invest_grouped %>% 
+  filter(Sector=='Logistics') %>% 
+  group_by(Country)
+df_china_invest_grouped_fin = df_china_invest_grouped %>% 
+  filter(Sector=='Finance') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_tour = df_china_invest_grouped %>% 
+  filter(Sector=='Tourism') %>% 
+  group_by(Country)
+
+df_china_invest_grouped_health = df_china_invest_grouped %>% 
+  filter(Sector=='Health') %>% 
+  group_by(Country)
+worldcountry = geojson_read("./input_data/countries.geo.json", what = "sp")
+```
+```{r Building basemap, include=FALSE}
+basemap = leaflet(worldcountry, options = leafletOptions(minZoom = 1.25, 
+                                                      worldCopyJump=FALSE,
+                                                      maxBounds = list(
+                                                        list(-90, -180),
+                                                        list(90, 180)))) %>% 
+  addTiles() %>% 
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addLayersControl(
+    position='bottomleft',
+    baseGroups=c("All", "Agriculture", "Energy", "Transport", "Chemicals", "Metals", "Utilities", "Real estate", "Finance", "Technology", "Other", "Entertainment", "Logistics", "Tourism", "Health"),
+    options = layersControlOptions(collapsed = FALSE)) %>% 
+  clearBounds()
+```
+```{r}
+# create plotting parameters for map
+bins_indiv = c(100, 250, 500, 750, 1000, 1500, 2000, 3000, 5000) 
+rb_indiv <- brewer.pal(9, "Reds")
+cv_pal_indiv <- colorBin(rb_indiv, bins = bins_indiv)
+
+bins_all = c(100, 500, 1000, 1500, 2500, 4500, 7500, 10000, 25000) 
+rb_all <- brewer.pal(9, "Reds")
+cv_pal_all <- colorBin(rb_all, bins = bins_all)
+
+# mapping
+map = basemap %>%
+  # addLegend("bottomleft", pal = cv_pal_all, values = df_china_invest_grouped_all$amount, title = "<small>Investment Value (in millions)</small>", group = 'All') %>%
+  # addLegend("bottomleft", pal = cv_pal_indiv, values = df_china_invest_grouped_agri$amount, title = "<small>Investment Value (in millions)</small>", group = 'Agriculture') %>% 
+  # addLegend("bottomleft", pal = cv_pal_indiv, values = df_china_invest_grouped_chem$amount, title = "<small>Investment Value (in millions)</small>", group = 'Chemicals') %>% 
+  # addLegend("bottomleft", pal = cv_pal_indiv, values = df_china_invest_grouped_energy$amount, title = "<small>Investment Value (in millions)</small>", group = 'Energy') %>% 
+  # addLegend("bottomleft", pal = cv_pal_indiv, values = df_china_invest_grouped_ent$amount, title = "<small>Investment Value (in millions)</small>", group = 'Entertainment') %>% 
+  # addLegend("bottomleft", pal = cv_pal_indiv, values = df_china_invest_grouped_fin$amount, title = "<small>Investment Value (in millions)</small>", group = 'Finance') %>% 
+  # addLegend("bottomleft", pal = cv_pal_indiv, values = df_china_invest_grouped_health$amount, title = "<small>Investment Value (in millions)</small>", group = 'Health') %>% 
+  # addLegend("bottomleft", pal = cv_pal_indiv, values = df_china_invest_grouped_logs$amount, title = "<small>Investment Value (in millions)</small>", group = 'Logistics') %>% 
+  # addLegend("bottomleft", pal = cv_pal_indiv, values = df_china_invest_grouped_metals$amount, title = "<small>Investment Value (in millions)</small>", group = 'Metals') %>% 
+  # addLegend("bottomleft", pal = cv_pal_indiv, values = df_china_invest_grouped_other$amount, title = "<small>Investment Value (in millions)</small>", group = 'Other') %>% 
+  # addLegend("bottomleft", pal = cv_pal_indiv, values = df_china_invest_grouped_real$amount, title = "<small>Investment Value (in millions)</small>", group = 'Real estate') %>% 
+  # addLegend("bottomleft", pal = cv_pal_indiv, values = df_china_invest_grouped_tech$amount, title = "<small>Investment Value (in millions)</small>", group = 'Technology') %>% 
+  # addLegend("bottomleft", pal = cv_pal_indiv, values = df_china_invest_grouped_tour$amount, title = "<small>Investment Value (in millions)</small>", group = 'Tourism') %>% 
+  # addLegend("bottomleft", pal = cv_pal_indiv, values = df_china_invest_grouped_trans$amount, title = "<small>Investment Value (in millions)</small>", group = 'Transport') %>% 
+  # addLegend("bottomleft", pal = cv_pal_indiv, values = df_china_invest_grouped_util$amount, title = "<small>Investment Value (in millions)</small>", group = 'Utilities') %>% 
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_all(df_china_invest_grouped_all$amount),
+              group='All') %>%  
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_agri$amount),
+              group='Agriculture') %>% 
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_chem$amount),
+              group='Chemicals') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_energy$amount),
+              group='Energy') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_ent$amount),
+              group='Entertainment') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_fin$amount),
+              group='Finance') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_health$amount),
+              group='Health') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_logs$amount),
+              group='Logistics') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_metals$amount),
+              group='Metals') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_other$amount),
+              group='Other') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_real$amount),
+              group='Real estate') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_tech$amount),
+              group='Technology') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_tour$amount),
+              group='Tourism') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_trans$amount),
+              group='Transport') %>%
+  addPolygons(stroke = FALSE,
+              smoothFactor = 0.1,
+              fillOpacity = 0.8,
+              fillColor = ~cv_pal_indiv(df_china_invest_grouped_util$amount),
+              group='Utilities')
+
+map
+```
+
