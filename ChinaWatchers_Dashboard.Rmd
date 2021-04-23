@@ -61,92 +61,152 @@ Where is China investing in?
 
 This segment displays a world map of the location of China's investments over the years, overall, and by industry, from 2005 to 2020. 
 
+As visible from the coloration on the map (i.e., darker colors refer to a greater value of investment in a country), China is involved in investments across the entire world. It appears to have invested most heavily in the USA, the UK, Indonesia and Australia by raw total amount (in US dollars), but it also has a growing amount of investments in Russia as well as other countries in Europe, Africa, the Americas, Central Asia and Southeast Asia. 
+
+Please explore different industries, hover over each country for more information on the name of the country, and the amount that China has invested in the country (in USD).
+
 As this is quite an information-rich visualization, a Data Table is appended below for further exploration.
 
-
-
-### China's Investment Around the World
+### China's Investment Around the World (in USD)
 
 ```{r Preparing dataset, include=FALSE}
 # Preparing dataset
-map_filepath <- file.path(getwd(), "data", "china_investments.csv")
-df_china_invest = read.csv(map_filepath)
+df_china_invest = read.csv('./data/china_investments.csv')
+countries = read.csv("./data/countries_codes_and_coordinates.csv")
+worldcountry = geojson_read("./data/50m.geojson", what = "sp")
+```
+```{r, include=FALSE}
+# check consistency of country names across datasets
+df_china_invest = df_china_invest %>%
+  filter(Country != 'South Sudan') %>% 
+  mutate(Country = gsub("Britain", "UK", Country)) %>%
+  mutate(Country = gsub("Laos", "Lao People's Democratic Republic", Country)) %>%
+  mutate(Country = gsub("Iran", "Iran (Islamic Republic of)", Country)) %>%
+  mutate(Country = gsub("UAE", "United Arab Emirates", Country)) %>%
+  mutate(Country = gsub("\\<Congo\\>", "Democratic Republic of the Congo", Country)) %>% 
+  mutate(Country = gsub("Tanzania", "Tanzania, United Republic of", Country)) %>%
+  mutate(Country = gsub("Trinidad-Tobago", "Trinidad & Tobago", Country)) %>%
+  mutate(Country = gsub("Bahamas", "The Bahamas", Country)) %>%
+  mutate(Country = gsub("South Korea", "Republic of Korea", Country)) %>%
+  mutate(Country = gsub("Bosnia", "Bosnia and Herzegovina", Country)) %>%
+  mutate(Country = gsub("North Korea", "Korea, Democratic People's Republic of", Country)) %>%
+  mutate(Country = gsub("Sao Tome", "Sao Tome and Principe", Country)) %>%
+  mutate(Country = gsub("Macedonia", "North Macedonia", Country)) %>%
+  mutate(Country = gsub("Moldova", "Moldova, Republic of", Country))
+
+if (all(unique(df_china_invest$Country) %in% unique(countries$country))==FALSE) { print("Error: inconsistent country names")}
+
+df_china_invest = merge(df_china_invest, countries, by.x = "Country", by.y = "country")
 df_china_invest$Quantity.in.Millions = as.numeric(gsub("\\$", "", df_china_invest$Quantity.in.Millions))
 df_china_invest_grouped = df_china_invest %>%
+  filter(!is.na(Quantity.in.Millions)) %>%
   group_by(Country, Sector) %>%
   summarise(Investment_Count=n(),
-            amount=sum(Quantity.in.Millions)) %>% 
-  filter(!is.na(amount)) %>% 
-  mutate(Country = gsub("Russian Federation", "Russia", Country))
+            amount=sum(Quantity.in.Millions),
+            alpha3, numeric, latitude, longitude) %>%
+  distinct(Country, Sector, .keep_all = TRUE)
 
-df_china_invest_grouped_all = df_china_invest_grouped %>% 
-  group_by(Country) %>% 
-  summarise(amount=sum(amount))
+df_china_invest_grouped_all = df_china_invest_grouped %>%
+  group_by(Country) %>%
+  summarise(amount=sum(amount),
+            alpha3, numeric, latitude, longitude) %>%
+  distinct(Country, .keep_all = TRUE) %>%
+  arrange(alpha3)
 
-df_china_invest_grouped_agri = df_china_invest_grouped %>% 
-  filter(Sector=='Agriculture') %>% 
-  group_by(Country)
+df_china_invest_grouped_agri = df_china_invest_grouped %>%
+  filter(Sector=='Agriculture') %>%
+  group_by(Country) %>%
+  distinct(Country, .keep_all = TRUE) %>%
+  arrange(alpha3)
 
-df_china_invest_grouped_energy = df_china_invest_grouped %>% 
-  filter(Sector=='Energy') %>% 
-  group_by(Country)
+df_china_invest_grouped_energy = df_china_invest_grouped %>%
+  filter(Sector=='Energy') %>%
+  group_by(Country) %>%
+  distinct(Country, .keep_all = TRUE) %>%
+  arrange(alpha3)
 
-df_china_invest_grouped_trans = df_china_invest_grouped %>% 
-  filter(Sector=='Transport') %>% 
-  group_by(Country)
+df_china_invest_grouped_trans = df_china_invest_grouped %>%
+  filter(Sector=='Transport') %>%
+  group_by(Country) %>%
+  distinct(Country, .keep_all = TRUE) %>%
+  arrange(alpha3)
 
-df_china_invest_grouped_chem = df_china_invest_grouped %>% 
-  filter(Sector=='Chemicals') %>% 
-  group_by(Country)
+df_china_invest_grouped_chem = df_china_invest_grouped %>%
+  filter(Sector=='Chemicals') %>%
+  group_by(Country) %>%
+  distinct(Country, .keep_all = TRUE) %>%
+  arrange(alpha3)
 
-df_china_invest_grouped_metals = df_china_invest_grouped %>% 
-  filter(Sector=='Metals') %>% 
-  group_by(Country)
+df_china_invest_grouped_metals = df_china_invest_grouped %>%
+  filter(Sector=='Metals') %>%
+  group_by(Country) %>%
+  distinct(Country, .keep_all = TRUE) %>%
+  arrange(alpha3)
 
-df_china_invest_grouped_util = df_china_invest_grouped %>% 
-  filter(Sector=='Utilities') %>% 
-  group_by(Country)
+df_china_invest_grouped_util = df_china_invest_grouped %>%
+  filter(Sector=='Utilities') %>%
+  group_by(Country) %>%
+  distinct(Country, .keep_all = TRUE) %>%
+  arrange(alpha3)
 
-df_china_invest_grouped_real = df_china_invest_grouped %>% 
-  filter(Sector=='Real estate') %>% 
-  group_by(Country)
+df_china_invest_grouped_real = df_china_invest_grouped %>%
+  filter(Sector=='Real estate') %>%
+  group_by(Country) %>%
+  distinct(Country, .keep_all = TRUE) %>%
+  arrange(alpha3)
 
-df_china_invest_grouped_fin = df_china_invest_grouped %>% 
-  filter(Sector=='Finance') %>% 
-  group_by(Country)
+df_china_invest_grouped_fin = df_china_invest_grouped %>%
+  filter(Sector=='Finance') %>%
+  group_by(Country) %>%
+  distinct(Country, .keep_all = TRUE) %>%
+  arrange(alpha3)
 
-df_china_invest_grouped_tech = df_china_invest_grouped %>% 
-  filter(Sector=='Technology') %>% 
-  group_by(Country)
+df_china_invest_grouped_tech = df_china_invest_grouped %>%
+  filter(Sector=='Technology') %>%
+  group_by(Country) %>%
+  distinct(Country, .keep_all = TRUE) %>%
+  arrange(alpha3)
 
-df_china_invest_grouped_other = df_china_invest_grouped %>% 
-  filter(Sector=='Other') %>% 
-  group_by(Country)
+df_china_invest_grouped_other = df_china_invest_grouped %>%
+  filter(Sector=='Other') %>%
+  group_by(Country) %>%
+  distinct(Country, .keep_all = TRUE) %>%
+  arrange(alpha3)
 
-df_china_invest_grouped_ent = df_china_invest_grouped %>% 
-  filter(Sector=='Entertainment') %>% 
-  group_by(Country)
+df_china_invest_grouped_ent = df_china_invest_grouped %>%
+  filter(Sector=='Entertainment') %>%
+  group_by(Country) %>%
+  distinct(Country, .keep_all = TRUE) %>%
+  arrange(alpha3)
 
-df_china_invest_grouped_logs = df_china_invest_grouped %>% 
-  filter(Sector=='Logistics') %>% 
-  group_by(Country)
-df_china_invest_grouped_fin = df_china_invest_grouped %>% 
-  filter(Sector=='Finance') %>% 
-  group_by(Country)
+df_china_invest_grouped_logs = df_china_invest_grouped %>%
+  filter(Sector=='Logistics') %>%
+  group_by(Country) %>%
+  distinct(Country, .keep_all = TRUE) %>%
+  arrange(alpha3)
 
-df_china_invest_grouped_tour = df_china_invest_grouped %>% 
-  filter(Sector=='Tourism') %>% 
-  group_by(Country)
+df_china_invest_grouped_fin = df_china_invest_grouped %>%
+  filter(Sector=='Finance') %>%
+  group_by(Country) %>%
+  distinct(Country, .keep_all = TRUE) %>%
+  arrange(alpha3)
 
-df_china_invest_grouped_health = df_china_invest_grouped %>% 
-  filter(Sector=='Health') %>% 
-  group_by(Country)
+df_china_invest_grouped_tour = df_china_invest_grouped %>%
+  filter(Sector=='Tourism') %>%
+  group_by(Country) %>%
+  distinct(Country, .keep_all = TRUE) %>%
+  arrange(alpha3)
 
-map_filepath2 <- file.path(getwd(), "data", "countries.geo.json")
-worldcountry = geojson_read(map_filepath2, what = "sp")
+df_china_invest_grouped_health = df_china_invest_grouped %>%
+  filter(Sector=='Health') %>%
+  group_by(Country) %>%
+  distinct(Country, .keep_all = TRUE) %>%
+  arrange(alpha3)
 ```
 ```{r Building basemap, include=FALSE}
-basemap = leaflet(worldcountry, options = leafletOptions(minZoom = 1.25, 
+plot_map <- worldcountry[worldcountry$ADM0_A3 %in% unique(df_china_invest_grouped$alpha3), ]
+
+basemap = leaflet(plot_map, options = leafletOptions(minZoom = 1.25, 
                                                       worldCopyJump=FALSE,
                                                       maxBounds = list(
                                                         list(-90, -180),
@@ -161,106 +221,181 @@ basemap = leaflet(worldcountry, options = leafletOptions(minZoom = 1.25,
 ```
 ```{r}
 # create plotting parameters for map
-bins_indiv = c(100, 250, 500, 750, 1000, 1500, 2000, 3000, 5000) 
+bins_indiv = c(0, 400, 800, 1600, 3600, 7500, 10000, 15000, 20000, 25000)
 rb_indiv <- brewer.pal(9, "Reds")
 cv_pal_indiv <- colorBin(rb_indiv, bins = bins_indiv)
 
-bins_all = c(100, 500, 1000, 1500, 2500, 4500, 7500, 10000, 25000) 
+bins_all = c(0, 750, 1800, 4200, 9500, 14000, 20000, 27000, 100000)
 rb_all <- brewer.pal(9, "Reds")
 cv_pal_all <- colorBin(rb_all, bins = bins_all)
 
 # mapping
-map = basemap %>%
-  #addLegend("bottomright", pal = cv_pal_all, values = df_china_invest_grouped_all$amount, title = "<small>Investment Value (in millions)</small>", group = 'All') %>%
-  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_agri$amount, title = "<small>Investment Value (in millions)</small>", group = 'Agriculture') %>% 
-  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_chem$amount, title = "<small>Investment Value (in millions)</small>", group = 'Chemicals') %>% 
-  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_energy$amount, title = "<small>Investment Value (in millions)</small>", group = 'Energy') %>% 
-  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_ent$amount, title = "<small>Investment Value (in millions)</small>", group = 'Entertainment') %>% 
-  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_fin$amount, title = "<small>Investment Value (in millions)</small>", group = 'Finance') %>% 
-  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_health$amount, title = "<small>Investment Value (in millions)</small>", group = 'Health') %>% 
-  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_logs$amount, title = "<small>Investment Value (in millions)</small>", group = 'Logistics') %>% 
-  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_metals$amount, title = "<small>Investment Value (in millions)</small>", group = 'Metals') %>% 
-  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_other$amount, title = "<small>Investment Value (in millions)</small>", group = 'Other') %>% 
-  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_real$amount, title = "<small>Investment Value (in millions)</small>", group = 'Real estate') %>% 
-  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_tech$amount, title = "<small>Investment Value (in millions)</small>", group = 'Technology') %>% 
-  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_tour$amount, title = "<small>Investment Value (in millions)</small>", group = 'Tourism') %>% 
-  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_trans$amount, title = "<small>Investment Value (in millions)</small>", group = 'Transport') %>% 
-  #addLegend("bottomright", pal = cv_pal_indiv, values = df_china_invest_grouped_util$amount, title = "<small>Investment Value (in millions)</small>", group = 'Utilities') %>% 
-  addPolygons(stroke = FALSE,
+map = basemap %>% 
+  addPolygons(data=plot_map[plot_map$ADM0_A3 %in% df_china_invest_grouped_all$alpha3, ],
+              stroke = FALSE,
               smoothFactor = 0.1,
               fillOpacity = 0.8,
               fillColor = ~cv_pal_all(df_china_invest_grouped_all$amount),
-              group='All') %>%  
-  addPolygons(stroke = FALSE,
+              group='All',
+              label = sprintf("<strong>%s</strong><br/><strong>Sector</strong>: %s<br/><strong>Investment ($m)</strong>: %1.f",
+                              df_china_invest_grouped_all$Country, 'All', df_china_invest_grouped_all$amount) %>% lapply(htmltools::HTML),
+              labelOptions = labelOptions(
+                                 style = list("font-weight" = "normal", padding = "3px 8px"),
+                                 textsize = "12px", direction = "auto")) %>%  
+  addPolygons(data=plot_map[plot_map$ADM0_A3 %in% df_china_invest_grouped_agri$alpha3, ],
+              stroke = FALSE,
               smoothFactor = 0.1,
               fillOpacity = 0.8,
               fillColor = ~cv_pal_indiv(df_china_invest_grouped_agri$amount),
-              group='Agriculture') %>% 
-  addPolygons(stroke = FALSE,
+              group='Agriculture',
+              label = sprintf("<strong>%s</strong><br/><strong>Sector</strong>: %s<br/><strong>Investment ($m)</strong>: %1.f",
+                              df_china_invest_grouped_agri$Country, 'Agriculture', df_china_invest_grouped_agri$amount) %>% lapply(htmltools::HTML),
+              labelOptions = labelOptions(
+                                 style = list("font-weight" = "normal", padding = "3px 8px"),
+                                 textsize = "12px", direction = "auto")) %>% 
+  addPolygons(data=plot_map[plot_map$ADM0_A3 %in% df_china_invest_grouped_chem$alpha3, ],
+              stroke = FALSE,
               smoothFactor = 0.1,
               fillOpacity = 0.8,
               fillColor = ~cv_pal_indiv(df_china_invest_grouped_chem$amount),
-              group='Chemicals') %>%
-  addPolygons(stroke = FALSE,
+              group='Chemicals',
+              label = sprintf("<strong>%s</strong><br/><strong>Sector</strong>: %s<br/><strong>Investment ($m)</strong>: %1.f",
+                              df_china_invest_grouped_chem$Country, 'Chemicals', df_china_invest_grouped_chem$amount) %>% lapply(htmltools::HTML),
+              labelOptions = labelOptions(
+                                 style = list("font-weight" = "normal", padding = "3px 8px"),
+                                 textsize = "12px", direction = "auto")) %>%
+  addPolygons(data=plot_map[plot_map$ADM0_A3 %in% df_china_invest_grouped_energy$alpha3, ],
+              stroke = FALSE,
               smoothFactor = 0.1,
               fillOpacity = 0.8,
               fillColor = ~cv_pal_indiv(df_china_invest_grouped_energy$amount),
-              group='Energy') %>%
-  addPolygons(stroke = FALSE,
+              group='Energy',
+              label = sprintf("<strong>%s</strong><br/><strong>Sector</strong>: %s<br/><strong>Investment ($m)</strong>: %1.f",
+                              df_china_invest_grouped_energy$Country, 'Energy', df_china_invest_grouped_energy$amount) %>% lapply(htmltools::HTML),
+              labelOptions = labelOptions(
+                                 style = list("font-weight" = "normal", padding = "3px 8px"),
+                                 textsize = "12px", direction = "auto")) %>%
+  addPolygons(data=plot_map[plot_map$ADM0_A3 %in% df_china_invest_grouped_ent$alpha3, ],
+              stroke = FALSE,
               smoothFactor = 0.1,
               fillOpacity = 0.8,
               fillColor = ~cv_pal_indiv(df_china_invest_grouped_ent$amount),
-              group='Entertainment') %>%
-  addPolygons(stroke = FALSE,
+              group='Entertainment',
+              label = sprintf("<strong>%s</strong><br/><strong>Sector</strong>: %s<br/><strong>Investment ($m)</strong>: %1.f",
+                              df_china_invest_grouped_ent$Country, 'Entertainment', df_china_invest_grouped_ent$amount) %>% lapply(htmltools::HTML),
+              labelOptions = labelOptions(
+                                 style = list("font-weight" = "normal", padding = "3px 8px"),
+                                 textsize = "12px", direction = "auto")) %>%
+  addPolygons(data=plot_map[plot_map$ADM0_A3 %in% df_china_invest_grouped_fin$alpha3, ],
+              stroke = FALSE,
               smoothFactor = 0.1,
               fillOpacity = 0.8,
               fillColor = ~cv_pal_indiv(df_china_invest_grouped_fin$amount),
-              group='Finance') %>%
-  addPolygons(stroke = FALSE,
+              group='Finance',
+              label = sprintf("<strong>%s</strong><br/><strong>Sector</strong>: %s<br/><strong>Investment ($m)</strong>: %1.f",
+                              df_china_invest_grouped_fin$Country, 'Finance', df_china_invest_grouped_fin$amount) %>% lapply(htmltools::HTML),
+              labelOptions = labelOptions(
+                                 style = list("font-weight" = "normal", padding = "3px 8px"),
+                                 textsize = "12px", direction = "auto")) %>%
+  addPolygons(data=plot_map[plot_map$ADM0_A3 %in% df_china_invest_grouped_health$alpha3, ],
+              stroke = FALSE,
               smoothFactor = 0.1,
               fillOpacity = 0.8,
               fillColor = ~cv_pal_indiv(df_china_invest_grouped_health$amount),
-              group='Health') %>%
-  addPolygons(stroke = FALSE,
+              group='Health',
+              label = sprintf("<strong>%s</strong><br/><strong>Sector</strong>: %s<br/><strong>Investment ($m)</strong>: %1.f",
+                              df_china_invest_grouped_health$Country, 'Health', df_china_invest_grouped_health$amount) %>% lapply(htmltools::HTML),
+              labelOptions = labelOptions(
+                                 style = list("font-weight" = "normal", padding = "3px 8px"),
+                                 textsize = "12px", direction = "auto")) %>%
+  addPolygons(data=plot_map[plot_map$ADM0_A3 %in% df_china_invest_grouped_logs$alpha3, ],
+              stroke = FALSE,
               smoothFactor = 0.1,
               fillOpacity = 0.8,
               fillColor = ~cv_pal_indiv(df_china_invest_grouped_logs$amount),
-              group='Logistics') %>%
-  addPolygons(stroke = FALSE,
+              group='Logistics',
+              label = sprintf("<strong>%s</strong><br/><strong>Sector</strong>: %s<br/><strong>Investment ($m)</strong>: %1.f",
+                              df_china_invest_grouped_logs$Country, 'Logistics', df_china_invest_grouped_logs$amount) %>% lapply(htmltools::HTML),
+              labelOptions = labelOptions(
+                                 style = list("font-weight" = "normal", padding = "3px 8px"),
+                                 textsize = "12px", direction = "auto")) %>%
+  addPolygons(data=plot_map[plot_map$ADM0_A3 %in% df_china_invest_grouped_metals$alpha3, ],
+              stroke = FALSE,
               smoothFactor = 0.1,
               fillOpacity = 0.8,
               fillColor = ~cv_pal_indiv(df_china_invest_grouped_metals$amount),
-              group='Metals') %>%
-  addPolygons(stroke = FALSE,
+              group='Metals',
+              label = sprintf("<strong>%s</strong><br/><strong>Sector</strong>: %s<br/><strong>Investment ($m)</strong>: %1.f",
+                              df_china_invest_grouped_metals$Country, 'Metals', df_china_invest_grouped_metals$amount) %>% lapply(htmltools::HTML),
+              labelOptions = labelOptions(
+                                 style = list("font-weight" = "normal", padding = "3px 8px"),
+                                 textsize = "12px", direction = "auto")) %>%
+  addPolygons(data=plot_map[plot_map$ADM0_A3 %in% df_china_invest_grouped_other$alpha3, ],
+              stroke = FALSE,
               smoothFactor = 0.1,
               fillOpacity = 0.8,
               fillColor = ~cv_pal_indiv(df_china_invest_grouped_other$amount),
-              group='Other') %>%
-  addPolygons(stroke = FALSE,
+              group='Other',
+              label = sprintf("<strong>%s</strong><br/><strong>Sector</strong>: %s<br/><strong>Investment ($m)</strong>: %1.f",
+                              df_china_invest_grouped_other$Country, 'Other', df_china_invest_grouped_other$amount) %>% lapply(htmltools::HTML),
+              labelOptions = labelOptions(
+                                 style = list("font-weight" = "normal", padding = "3px 8px"),
+                                 textsize = "12px", direction = "auto")) %>%
+  addPolygons(data=plot_map[plot_map$ADM0_A3 %in% df_china_invest_grouped_real$alpha3, ],
+              stroke = FALSE,
               smoothFactor = 0.1,
               fillOpacity = 0.8,
               fillColor = ~cv_pal_indiv(df_china_invest_grouped_real$amount),
-              group='Real estate') %>%
-  addPolygons(stroke = FALSE,
+              group='Real estate',
+              label = sprintf("<strong>%s</strong><br/><strong>Sector</strong>: %s<br/><strong>Investment ($m)</strong>: %1.f",
+                              df_china_invest_grouped_real$Country, 'Real estate', df_china_invest_grouped_real$amount) %>% lapply(htmltools::HTML),
+              labelOptions = labelOptions(
+                                 style = list("font-weight" = "normal", padding = "3px 8px"),
+                                 textsize = "12px", direction = "auto")) %>%
+  addPolygons(data=plot_map[plot_map$ADM0_A3 %in% df_china_invest_grouped_tech$alpha3, ],
+              stroke = FALSE,
               smoothFactor = 0.1,
               fillOpacity = 0.8,
               fillColor = ~cv_pal_indiv(df_china_invest_grouped_tech$amount),
-              group='Technology') %>%
-  addPolygons(stroke = FALSE,
+              group='Technology',
+              label = sprintf("<strong>%s</strong><br/><strong>Sector</strong>: %s<br/><strong>Investment ($m)</strong>: %1.f",
+                              df_china_invest_grouped_tech$Country, 'Technology', df_china_invest_grouped_tech$amount) %>% lapply(htmltools::HTML),
+              labelOptions = labelOptions(
+                                 style = list("font-weight" = "normal", padding = "3px 8px"),
+                                 textsize = "12px", direction = "auto")) %>%
+  addPolygons(data=plot_map[plot_map$ADM0_A3 %in% df_china_invest_grouped_tour$alpha3, ],
+              stroke = FALSE,
               smoothFactor = 0.1,
               fillOpacity = 0.8,
               fillColor = ~cv_pal_indiv(df_china_invest_grouped_tour$amount),
-              group='Tourism') %>%
-  addPolygons(stroke = FALSE,
+              group='Tourism',
+              label = sprintf("<strong>%s</strong><br/><strong>Sector</strong>: %s<br/><strong>Investment ($m)</strong>: %1.f",
+                              df_china_invest_grouped_tour$Country, 'Tourism', df_china_invest_grouped_tour$amount) %>% lapply(htmltools::HTML),
+              labelOptions = labelOptions(
+                                 style = list("font-weight" = "normal", padding = "3px 8px"),
+                                 textsize = "12px", direction = "auto")) %>%
+  addPolygons(data=plot_map[plot_map$ADM0_A3 %in% df_china_invest_grouped_trans$alpha3, ],
+              stroke = FALSE,
               smoothFactor = 0.1,
               fillOpacity = 0.8,
               fillColor = ~cv_pal_indiv(df_china_invest_grouped_trans$amount),
-              group='Transport') %>%
-  addPolygons(stroke = FALSE,
+              group='Transport',
+              label = sprintf("<strong>%s</strong><br/><strong>Sector</strong>: %s<br/><strong>Investment ($m)</strong>: %1.f",
+                              df_china_invest_grouped_trans$Country, 'Transport', df_china_invest_grouped_trans$amount) %>% lapply(htmltools::HTML),
+              labelOptions = labelOptions(
+                                 style = list("font-weight" = "normal", padding = "3px 8px"),
+                                 textsize = "12px", direction = "auto")) %>%
+  addPolygons(data=plot_map[plot_map$ADM0_A3 %in% df_china_invest_grouped_util$alpha3, ],
+              stroke = FALSE,
               smoothFactor = 0.1,
               fillOpacity = 0.8,
               fillColor = ~cv_pal_indiv(df_china_invest_grouped_util$amount),
-              group='Utilities')
+              group='Utilities',
+              label = sprintf("<strong>%s</strong><br/><strong>Sector</strong>: %s<br/><strong>Investment ($m)</strong>: %1.f",
+                              df_china_invest_grouped_util$Country, 'Utilities', df_china_invest_grouped_util$amount) %>% lapply(htmltools::HTML),
+              labelOptions = labelOptions(
+                                 style = list("font-weight" = "normal", padding = "3px 8px"),
+                                 textsize = "12px", direction = "auto"))
 
 map
 ```
@@ -268,11 +403,17 @@ map
 ### China's Investment Around the World (Data)
 
 ```{r}
+df_china_invest_fordt <- rename(df_china_invest_grouped, c('Amount (U. S. Dollars)' = 'amount'))
+
+vars <- c('Country', 'Sector', 'Investment_Count', 'Amount (U. S. Dollars)')
+
+df_china_invest_fordt2 <- df_china_invest_fordt[ ,vars]
+
 pretty_headers <- 
-  gsub("[_]", " ", colnames(df_china_invest_grouped)) %>%
+  gsub("[_]", " ", colnames(df_china_invest_fordt2)) %>%
   stringr::str_to_title()
 
-datatable(df_china_invest_grouped,
+datatable(df_china_invest_fordt2,
           colnames = pretty_headers)
 ```
 
