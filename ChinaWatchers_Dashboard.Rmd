@@ -423,10 +423,10 @@ Yearly Investments by Categories
 
 What is China investing in? 
 
-The following page displays the yearly amount of Chinese investments overseas from 2005 to 2020. The amounts are sorted by three categories: 1. the ten largest investment destinations, 2. the ten largest Chinese investors and 3. industry sectors. Chinese investments overseas generally reached a peak in the mid-late 2010s, which preceded a slowdown in the following years. The United States is the top investment destination for Chinese investors and the energy sector is consistently the top sector for Chinese investment. There is no one Chinese investor that has dominated Chinese investment overseas.
+The following page displays the yearly amount of Chinese investments overseas from 2005 to 2020. The amounts are sorted by three categories: 1. the ten largest investment destinations, 2. the five largest Chinese investors and 3. industry sectors. Chinese investments overseas generally reached a peak in the mid-late 2010s, which preceded a slowdown in the following years. The United States is the top investment destination for Chinese investors and the energy sector is consistently the top sector for Chinese investment. There is no one Chinese investor that has dominated Chinese investment overseas, however.
 
 
-### Top 10 Investment Destinations
+### Yearly Investments in Top 10 Destinations
 
 ```{r}
 CountryYearly <- chinainv_clean %>% 
@@ -444,15 +444,22 @@ top10countries <- byCountry %>%
   select(Country) %>% 
   pull()
 
+CountryColor <- data.frame(Country = top10countries,
+                           Color = c("#0033cc", "#cc99ff", "#33cc33",
+                           "#e600e6", "#ffbf00", "#00e6e6", "#ff6600",
+                           "#cc0000", "#003366", "#666633"))
+
 Top10CountryYearly <- CountryYearly %>% 
-  filter(Country %in% top10countries)
+  filter(Country %in% top10countries) %>% 
+  left_join(CountryColor, by = "Country")
 
 countryViz <- Top10CountryYearly %>% 
   ggplot(aes(x = Year, y = TotalInvestment)) +
   geom_line(aes(color = Country)) +
-  labs(title = "Chinese Foreign Investments by Top 10 Destinations (2005-2020)",
+  labs(title = "Chinese Foreign Investments in Top 10 Destinations (2005-2020)",
        y = "Total Investments (in millions USD)") +
-  scale_color_brewer(palette = "Paired") +
+  scale_color_manual(breaks = CountryColor$Country,
+                     values = CountryColor$Color) +
   ggthemes::theme_tufte() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
@@ -460,7 +467,31 @@ countryViz <- Top10CountryYearly %>%
 ggplotly(countryViz)
 ```
 
-### Top 10 Chinese Investors
+### Total Foreign Investments in Top 10 Country Destinations
+
+```{r}
+top10CountryAmount <- byCountry %>% 
+  head(10) 
+
+rankedCountry <- top10CountryAmount %>% 
+  ggplot(aes(x = reorder(Country, TotalInvestment),
+             y = TotalInvestment)) +
+  geom_col(aes(fill = Country)) +
+  coord_flip() +
+  scale_fill_manual(breaks=CountryColor$Country,
+                    values = CountryColor$Color) +
+  labs(title = "Total Foreign Investments in Top 10 Country Destinations (2005-2020)",
+       x = "",
+       y = "Total Investments (in millions USD)") +
+  ggthemes::theme_tufte() +
+  theme(legend.position = "none") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        axis.line = element_line(colour = "black"))
+
+ggplotly(rankedCountry, tooltip = c("y"))
+```
+
+### Yearly Foreign Investments by Top 5 Chinese Investors
 
 ```{r}
 InvestorYearly <- chinainv_clean %>% 
@@ -473,20 +504,26 @@ byInvestor <- chinainv_clean %>%
   summarise(TotalInvestment = sum(Quantity, na.rm=T)) %>% 
   arrange(desc(TotalInvestment))
 
-top10Investors <- byInvestor %>% 
-  head(10) %>% 
+top5Investors <- byInvestor %>% 
+  head(5) %>% 
   select(Investor) %>% 
   pull()
 
-Top10InvestorYearly <- InvestorYearly %>% 
-  filter(Investor %in% top10Investors)
+Top5InvestorYearly <- InvestorYearly %>% 
+  filter(Investor %in% top5Investors)
 
-investorViz <- Top10InvestorYearly %>% 
+nbColorsInvestor <- 5
+InvColors <- colorRampPalette(brewer.pal(5, "Set1"))(nbColorsInvestor)
+
+InvestorColor <- data.frame(Investor = top5Investors, Color = InvColors)
+
+investorViz <- Top5InvestorYearly %>% 
   ggplot(aes(x = Year, y = TotalInvestment)) +
   geom_line(aes(color = Investor)) +
-  labs(title = "Chinese Foreign Investments by Largest 10 Investors (2005-2020)",
+  labs(title = "Chinese Foreign Investments by Five Largest Investors (2005-2020)",
        y = "Total Investments (in millions USD)") +
   ylim(0,20000)+
+  scale_color_manual(breaks = InvestorColor$Investor, values=InvestorColor$Color) +
   ggthemes::theme_tufte() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
@@ -494,7 +531,36 @@ investorViz <- Top10InvestorYearly %>%
 ggplotly(investorViz)
 ```
 
-### Chinese Investments by Sector
+### Total Foreign Investments by Top 5 Chinese Investors
+
+```{r}
+top5InvestorAmount <- byInvestor %>% 
+  head(5) 
+
+top5InvestorAmount[[5,1]] <- "China Reform\nHoldings,\nChemChina"
+
+InvestorColor1 <- InvestorColor
+
+InvestorColor1[[5,1]] <- "China Reform\nHoldings,\nChemChina"
+
+rankedInvestor <- top5InvestorAmount %>% 
+  ggplot(aes(x = reorder(Investor, TotalInvestment),
+             y = TotalInvestment)) +
+  geom_col(aes(fill = Investor)) +
+  scale_fill_manual(breaks = InvestorColor1$Investor, values=InvestorColor1$Color)+
+  coord_flip() +
+  labs(title = "Total Foreign Investments by Top 5 Chinese Investors (2005-2020)",
+       x = "",
+       y = "Total Investments (in millions USD)") +
+  ggthemes::theme_tufte() +
+  theme(legend.position = "none") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        axis.line = element_line(colour = "black"))
+
+ggplotly(rankedInvestor, tooltip = c("y"))
+```
+
+### Yearly Foreign Investments by Sector
 
 ```{r}
 SectorYearly <- chinainv_clean %>% 
@@ -507,15 +573,19 @@ bySector <- SectorYearly %>%
   summarise(TotalInvestment = sum(TotalInvestment, na.rm = T)) %>% 
   arrange(desc(TotalInvestment))
 
+Sectors <- unique(SectorYearly$Sector)
+
 nb.cols <- 14
 mycolors <- colorRampPalette(brewer.pal(9, "Set1"))(nb.cols)
+
+SectorColor <- data.frame(Sector = Sectors, Color = mycolors)
 
 sectorViz <- SectorYearly %>% 
   ggplot(aes(x = Year, y = TotalInvestment)) +
   labs(title = "Chinese Foreign Investments by Sector (2005-2020)",
        y = "Total Investments (in millions USD)") +
   geom_line(aes(color = Sector)) +
-  scale_color_manual(values = mycolors) +
+  scale_color_manual(breaks = SectorColor$Sector, values = SectorColor$Color) +
   ggthemes::theme_tufte() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
@@ -523,6 +593,31 @@ sectorViz <- SectorYearly %>%
 ggplotly(sectorViz)
 ```
 
+### Total Foreign Investments by Sector
+
+```{r}
+SectorGrouped <- chinainv_clean %>% 
+  group_by(Sector) %>% 
+  summarise(TotalInvestment = sum(Quantity, na.rm = T)) %>% 
+  arrange(desc(TotalInvestment))
+
+rankedSector <- SectorGrouped %>% 
+  ggplot(aes(x = reorder(Sector, TotalInvestment),
+             y = TotalInvestment)) +
+  geom_col(aes(fill = Sector)) +
+  coord_flip() +
+  scale_fill_manual(breaks=SectorColor$Sector,
+                    values = SectorColor$Color) +
+  labs(title = "Total Foreign Investments by Sector (2005-2020)",
+       x = "",
+       y = "Total Investments (in millions USD)") +
+  ggthemes::theme_tufte() +
+  theme(legend.position = "none") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        axis.line = element_line(colour = "black"))
+
+ggplotly(rankedSector, tooltip = c("y"))
+```
 
 Rising Outflows
 ===================================== 
