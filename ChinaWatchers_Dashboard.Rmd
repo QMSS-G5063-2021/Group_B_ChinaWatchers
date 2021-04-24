@@ -51,7 +51,7 @@ Please explore each tabs to find out more:
 
 3. Rising Outflows - Is China really investing more than the US? 
 
-4. Next Frontier: Africa - What do we know about how China is investing in Africa?
+4. Next Frontier: Africa - What do we know about how China and the US are investing in Africa?
 
 World Map
 ===================================== 
@@ -623,7 +623,7 @@ Rising Outflows
 ===================================== 
 ### FDI Outflows as a percentage of GDP 
 
-Is China really investing more than the US? 
+What do we know about how China and the US are investing in Africa?
 
 This segment displays line graphs of US and China both seen FDI outflows over the years. Notably, however, one can note how China's rise in FDI outflows have mostly been linear, while the US' seem to fluctuate over time.
 
@@ -676,6 +676,10 @@ Next Frontier: Africa
 ### Commentary
 
 What do we know about how China is investing in Africa?
+
+We can see from the bar charts that the Chinese stake in Africa is getting larger over time, vis a vis the amount that the US is investing. 
+
+Please refer to the map below for the geographic distribution of investments across Africa. 
 
 ```{r}
 # libraries
@@ -732,7 +736,7 @@ ggplotly(stock_plot)
 ```
 
 
-### Same when looking at flow instead of stock
+### Same when looking at flow instead of stock (i.e., from US/China to Africa)
 
 ```{r}
 flow_plot = ggplot(filter(totals, fdi_type=="flow", year >= 2003), aes(x=year, y=investment_amount, fill=country)) +
