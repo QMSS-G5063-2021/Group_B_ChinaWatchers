@@ -822,8 +822,7 @@ leaflet(africa_geo) %>% addTiles() %>%
             position="bottomright") %>%
   addLayersControl(position='bottomleft',
                    baseGroups = c("2019", "2018", "2017", "2016", "2015", "2014"),
-                   options = layersControlOptions(collapsed = FALSE)) %>%
-  leaflet.extras::addResetMapButton()
+                   options = layersControlOptions(collapsed = FALSE)) 
 ```
 
 
