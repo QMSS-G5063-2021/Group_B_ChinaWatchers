@@ -687,6 +687,7 @@ library(plotly)
 library(tidyr)
 library(dplyr)
 library(ggmap)
+library(scales)
 library(countrycode)
 library(tmap)
 library(geojsonio)
@@ -704,10 +705,10 @@ us_africa = readxl::read_xlsx("./data/FDIData_08Jan2021.xlsx", skip=1, n_max=30,
 us_africa = us_africa %>% rename("year"="US$ bn, unadjusted", "flow"="Flows*", "stock"="Stock")
 
 
-china_africa_long = pivot_longer(china_africa, 2:3, names_to="fdi_type", values_to="investment_amount")
+china_africa_long = pivot_longer(china_africa, 2:3, names_to="fdi_type", values_to="net_investment_value")
 china_africa_long$country="China"
 
-us_africa_long = pivot_longer(us_africa, 2:3, names_to="fdi_type", values_to="investment_amount")
+us_africa_long = pivot_longer(us_africa, 2:3, names_to="fdi_type", values_to="net_investment_value")
 us_africa_long$country="US"
 
 totals = rbind(china_africa_long, us_africa_long)
@@ -723,8 +724,11 @@ china_stock_long$iso = countrycode(china_stock_long$country, origin="country.nam
 ```
 
 ### Global pattern holds in Africa as well
+
+We a see a steady year-over-year increase in China stock investment activity to Africa, with plateauing in recent years.
+
 ```{r}
-stock_plot = ggplot(filter(totals, fdi_type=="stock", year >=2003), aes(x=year, y=investment_amount, fill=country)) +
+stock_plot = ggplot(filter(totals, fdi_type=="stock", year >=2003), aes(x=year, y=net_investment_value, fill=country)) +
   geom_bar(aes(fill=country), stat="identity") +
   ggthemes::theme_tufte() +
   labs(x= "Year", y="Investment amount in billions of USD, unadjusted",
@@ -732,25 +736,31 @@ stock_plot = ggplot(filter(totals, fdi_type=="stock", year >=2003), aes(x=year, 
   scale_x_continuous(breaks=2003:2019) + 
   scale_y_continuous(labels=scales::unit_format(unit="b"))
 
-ggplotly(stock_plot)
+g = ggplotly(stock_plot)
+g
+
 ```
 
 
 ### Same when looking at flow instead of stock (i.e., from US/China to Africa)
 
+Here, flows are net (inflow and outflow) direct transactions recorded during the reference year. China started to overtake the U.S. in activity in 2014.
+
 ```{r}
-flow_plot = ggplot(filter(totals, fdi_type=="flow", year >= 2003), aes(x=year, y=investment_amount, fill=country)) +
+flow_plot = ggplot(filter(totals, fdi_type=="flow", year >= 2003), aes(x=year, y=net_investment_value, fill=country)) +
   geom_bar(aes(fill=country), stat="identity") +
   ggthemes::theme_tufte() +
   labs(x= "Year", y="Investment amount in billions of USD, unadjusted",
-       title="FDI in Africa by Year: Flow") + 
+       title="Net FDI to Africa by Year: Flow") + 
   scale_x_continuous(breaks=2003:2019) +
-  scale_y_continuous(labels=scales::unit_format(unit="b"))
+  scale_y_continuous(labels=scales::unit_format(unit="b"), breaks=seq(-3, 12, 2))
 
 ggplotly(flow_plot)
 ```
 
 ### Investment by African country
+
+We can see the time trends for the top 10 most invested in countries in Africa below. Notably, South Africa, a historical outlier within the African continent in terms of economic stability and relationship with Western countries, is an unsurprising outlier in dataset as well.
 
 ```{r}
 top_10_stock = china_stock_long %>% group_by(country) %>% summarize(max=max(stock_investment)) %>% arrange(desc(max)) %>% head(10) %>% select(country) %>% unlist()
@@ -764,25 +774,117 @@ by_country_stock = china_stock_long %>% filter(country %in% top_10_stock) %>%
 by_country_stock
 ```
 
-### Zooming in on latest data: 2019 Heatmap
+### Zooming in on most recent years in data: 2014-2019 Heatmap
+
+When viewing the information as a heatmap, it's apparent that Congo, Ethiopia, and Nigeria stand out as countries that China is interested in as well. All these countries are particularly rich in raw materials (minerals, oil, etc.).
 
 ```{r}
+library(leaflet.extras)
+
 china_stock_wide = china_stock_long %>% pivot_wider(id_cols=c(country, iso), names_from=year, values_from="stock_investment")
 
 africa_geo = geojson_read("./data/africa.geo.json", what="sp")
 africa_geo@data = africa_geo@data %>% left_join(china_stock_wide, by=c("gu_a3"="iso"))
 
 
-m = tm_shape(africa_geo) +
-  tm_borders() +
-  tm_text("country", size = .5) +
-  tm_fill("2019", title="Millions USD", convert2density = FALSE) +
-  tm_layout(
-    main.title="2019 China FDI Heatmap: Stock",
-    frame=FALSE
-  )
-m
+africa_geo = geojson_read("./data/africa.geo.json", what="sp")
+africa_geo@data = africa_geo@data %>% left_join(china_stock_wide, by=c("gu_a3"="iso"))
+
+pal=colorNumeric("Reds", domain=china_stock_long$stock_investment)
+leaflet(africa_geo) %>% addTiles() %>% 
+  addPolygons(data=africa_geo,
+              fillColor=pal(africa_geo$`2019`),
+              stroke=FALSE,
+              group="2019",
+              label=sprintf("Country: %s<br/>Investment (Millions USD): $%1.fm", africa_geo$country, africa_geo$`2019`) %>% lapply(htmltools::HTML)) %>%
+  addPolygons(data=africa_geo,
+              fillColor=colorNumeric("Reds", domain=africa_geo$`2018`)(africa_geo$`2018`),
+              stroke=FALSE,
+              group="2018",
+              label=sprintf("Country: %s<br/>Investment (Millions USD): $%1.fm", africa_geo$country, africa_geo$`2018`) %>% lapply(htmltools::HTML)) %>%
+  addPolygons(data=africa_geo,
+              fillColor=pal(africa_geo$`2017`),
+              stroke=FALSE,
+              group="2017",
+              label=sprintf("Country: %s<br/>Investment (Millions USD): $%1.fm", africa_geo$country, africa_geo$`2017`) %>% lapply(htmltools::HTML)) %>%
+  addPolygons(data=africa_geo,
+              fillColor=pal(africa_geo$`2016`),
+              stroke=FALSE,
+              group="2016",
+              label=sprintf("Country: %s<br/>Investment (Millions USD): $%1.fm", africa_geo$country, africa_geo$`2016`) %>% lapply(htmltools::HTML)) %>%
+  addPolygons(data=africa_geo,
+              fillColor=pal(africa_geo$`2015`),
+              stroke=FALSE,
+              group="2015",
+              label=sprintf("Country: %s<br/>Investment (Millions USD): $%1.fm", africa_geo$country, africa_geo$`2015`) %>% lapply(htmltools::HTML)) %>%
+  addPolygons(data=africa_geo,
+              fillColor=pal(africa_geo$`2014`),
+              stroke=FALSE,
+              group="2014",
+              label=sprintf("Country: %s<br/>Investment (Millions USD): $%1.fm", africa_geo$country, africa_geo$`2014`) %>% lapply(htmltools::HTML)) %>%
+  addLegend(pal=pal, values=china_stock_long$stock_investment, title="Millions USD",
+            position="bottomright") %>%
+  addLayersControl(position='bottomleft',
+                   baseGroups = c("2019", "2018", "2017", "2016", "2015", "2014"),
+                   options = layersControlOptions(collapsed = FALSE)) %>%
+  leaflet.extras::addResetMapButton()
 ```
+
+
+```{r}
+# old map
+
+# china_stock_wide = china_stock_long %>% pivot_wider(id_cols=c(country, iso), names_from=year, values_from="stock_investment")
+# 
+# africa_geo = geojson_read("./data/africa.geo.json", what="sp")
+# africa_geo@data = africa_geo@data %>% left_join(china_stock_wide, by=c("gu_a3"="iso"))
+# 
+# 
+# m = tm_shape(africa_geo) +
+#   tm_borders() +
+#   tm_text("country", size = .5) +
+#   tm_fill("2019", title="Millions USD", convert2density = FALSE) +
+#   tm_layout(
+#     main.title="2019 China FDI Heatmap: Stock",
+#     frame=FALSE
+#   )
+# m
+```
+
+
+```{r}
+# scratchwork
+
+
+# library(leaflet.extras)
+# leaflet(africa_geo) %>% addTiles() %>% 
+#   
+#   addPolygons(data=africa_geo,
+#               fillColor=colorNumeric("Reds", domain=africa_geo$`2019`)(africa_geo$`2019`),
+#               stroke=FALSE,
+#               group="2019",
+#               label=sprintf("Country: %s<br/>Investment (Millions USD): $%1.fm", africa_geo$country, africa_geo$`2019`) %>% lapply(htmltools::HTML)) %>%
+#   addLegend(pal=colorNumeric("Reds", domain=africa_geo$`2019`), values=africa_geo$`2019`, title="Millions USD",
+#             group="2019",
+#             position="bottomright") %>%
+#   addPolygons(data=africa_geo,
+#               fillColor=colorNumeric("Reds", domain=africa_geo$`2018`)(africa_geo$`2018`),
+#               stroke=FALSE,
+#               group="2018",
+#               label=sprintf("Country: %s<br/>Investment (Millions USD): $%1.fm", africa_geo$country, africa_geo$`2018`) %>% lapply(htmltools::HTML)) %>%
+#   addLegend(pal=colorNumeric("Reds", domain=africa_geo$`2018`), values=africa_geo$`2018`, title="Millions USD",
+#             group="2018",
+#             position="bottomright") %>%
+#   addLayersControl(position='bottomleft',
+#                    overlayGroups = c("2019", "2018")) %>%
+#                    # options = layersControlOptions(collapsed = FALSE)) %>%
+#   leaflet.extras::addResetMapButton()
+
+
+
+
+```
+
 
 Data Sources and Repo Link
 ===================================== 
