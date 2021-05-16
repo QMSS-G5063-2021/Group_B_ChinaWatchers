@@ -1,4 +1,4 @@
-# Group_B_ChinaWatchers
+# Chinese Investments Dashboard
 Project by Garda Ramadhito, Daryl Kow, Marc Castillo, Kagen Lim
 
 ## Project Title
@@ -13,10 +13,8 @@ Through a dashboard, we visualize China’s growth in outward-oriented foreign i
 3. Outgoing FDI - Is China really investing more than the US?
 4. Next Frontier: Africa - What do we know about how China is investing in Africa?
 
-## Links
+## Dashboard
 
-Link to Demo: https://www.youtube.com/watch?v=24zIiwSdqxs
+Please click on this link to view the dashboard -- 
 
-- This is a broad overview of the main features of our dashboard, that we hope will orient you to its main components.  
-
-Link to RPubs: https://rpubs.com/kagen/datavizchinafdi
+https://rpubs.com/kagen/datavizchinafdi
